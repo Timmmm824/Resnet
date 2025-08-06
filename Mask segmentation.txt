@@ -1,0 +1,70 @@
+import os
+import cv2
+import pandas as pd
+
+# 递归地获取目录中的所有文件
+def get_all_files(directory, extension):
+    file_list = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(extension):
+                file_list.append(os.path.join(root, file))
+    return file_list
+
+# 设置csv文件和图像文件的目录
+csv_dir = r'D:test'  # 确保此路径指向包含CSV文件的目录
+image_dir = r'D:test'  # 确保此路径指向包含图像文件的目录
+
+# 获取所有的csv文件和图像文件
+csv_files = get_all_files(csv_dir, '.csv')
+image_files = get_all_files(image_dir, '.jpg')
+
+# 遍历所有的csv文件
+for csv_file in csv_files:
+    # 读取csv文件
+    df = pd.read_csv(csv_file)
+
+    # 生成对应的图像文件名
+    image_file = os.path.basename(csv_file).replace('.csv', '.jpg')
+    image_path = os.path.join(image_dir, image_file)
+
+    # 检查图像是否存在
+    if image_path not in image_files:
+        print(f'{image_path} does not exist.')
+        continue
+
+    image = cv2.imread(image_path)
+
+    # 检查图像是否成功读取
+    if image is None:
+        print(f'Failed to read image: {image_path}')
+        continue
+
+    # 对每一行进行处理
+    for index, row in df.iterrows():
+        x_min = int(row['Box.X.Min'])
+        y_min = int(row['Box.Y.Min'])
+        x_max = int(row['Box.X.Max'])
+        y_max = int(row['Box.Y.Max'])
+
+        # 确保坐标在图像范围内
+        x_min = max(0, x_min)
+        y_min = max(0, y_min)
+        x_max = min(image.shape[1], x_max)  # image.shape[1] 是图像宽度
+        y_max = min(image.shape[0], y_max)  # image.shape[0] 是图像高度
+
+        # 检查坐标有效性
+        if x_min >= x_max or y_min >= y_max:
+            print(f'Invalid cropping coordinates for index {index} in {csv_file}')
+            continue
+
+        # 对图像进行分割
+        cropped_image = image[y_min:y_max, x_min:x_max]
+
+        # 保存分割后的图像
+        cropped_image_file = f'{os.path.basename(csv_file).replace(".csv", "")}_{index}.jpg'
+        cropped_image_path = os.path.join(image_dir, cropped_image_file)
+
+        # 保存分割后的图像
+        cv2.imwrite(cropped_image_path, cropped_image)
+        print(f'Saved cropped image: {cropped_image_path}')

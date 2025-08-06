@@ -1,0 +1,4 @@
+title = getTitle();
+run("Analyze Regions", "area perimeter circularity euler_number bounding_box centroid equivalent_ellipse ellipse_elong. convexity max._feret oriented_box oriented_box_elong. geodesic tortuosity max._inscribed_disc average_thickness geodesic_elong.");
+saveAs("Results", "D:/test/mask/result/"+ title+".csv");
+close();
